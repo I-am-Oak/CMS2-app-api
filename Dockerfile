@@ -32,19 +32,26 @@ ARG DEV=false
 #addser adds new passwordless user inside our image(dont run your application using root user- prevents attacker from total access)
 RUN python -m venv /py && \
     /py/bin/pip install --upgrade pip && \
+    apk add --update --no-cache postgresql-client && \
+    apk add --update --no-cache --virtual .tmp-build-deps \
+        build-base postgresql-dev musl-dev && \
     /py/bin/pip install -r /tmp/requirements.txt && \
     if [ $DEV = "true" ];\
         then /py/bin/pip install -r /tmp/requirements.dev.txt;\
     fi && \
+    #if [ ${DEV} = 'false']; \
+    #    then USER django-user; \
+    #fi && \
     rm -rf /tmp && \
+    apk del .tmp-build-deps && \
     adduser \
         --disabled-password \
         --no-create-home \
         django-user 
-
+  
 #updates enviroment variable inside the image
 #path defines all the directories where exe can be run
 ENV PATH="/py/bin:$PATH"
 
 #switch user from root to django-user everytime you use this image
-#USER django-user
+# USER django-user
