@@ -26,15 +26,15 @@ ARG DEV=false
 #install dependencies
 #runs this command on alpine image
 #&& \ allows multiple lines to be a part of a single run bracket - creates single image layer
-#usually u dont need a virtual env while working with docker. but we use it to avoid edge cases 
+#usually u dont need a virtual env while working with docker. but we use it to avoid edge cases
 #any file u need.. add it, ue it inside the Docker file and then remove it before it ends
 #concept - keep it light weight --- speed and space
 #addser adds new passwordless user inside our image(dont run your application using root user- prevents attacker from total access)
 RUN python -m venv /py && \
     /py/bin/pip install --upgrade pip && \
-    apk add --update --no-cache postgresql-client && \
+    apk add --update --no-cache postgresql-client jpeg-dev && \
     apk add --update --no-cache --virtual .tmp-build-deps \
-        build-base postgresql-dev musl-dev && \
+        build-base postgresql-dev musl-dev zlib zlib-dev && \
     /py/bin/pip install -r /tmp/requirements.txt && \
     if [ $DEV = "true" ];\
         then /py/bin/pip install -r /tmp/requirements.dev.txt;\
@@ -47,11 +47,15 @@ RUN python -m venv /py && \
     adduser \
         --disabled-password \
         --no-create-home \
-        django-user 
-  
+        django-user && \
+    mkdir -p /vol/web/media && \
+    mkdir -p /vol/web/static && \
+    chown -R django-user:django-user /vol && \
+    chmod -R 755 /vol
+
 #updates enviroment variable inside the image
 #path defines all the directories where exe can be run
 ENV PATH="/py/bin:$PATH"
 
 #switch user from root to django-user everytime you use this image
-# USER django-user
+#USER django-user
