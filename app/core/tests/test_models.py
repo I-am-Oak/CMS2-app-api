@@ -75,11 +75,11 @@ class ModelTests(TestCase):
         self.assertEqual(str(policy), policy.title)
 
     def test_create_status(self):
-        """test creating a status is successful."""
+        """test creating a tag is successful."""
         user = create_user()
-        status = models.Status.objects.create(user=user, name='status1')
+        tag = models.Tag.objects.create(user=user, name='status1')
 
-        self.assertEqual(str(status), status.name)
+        self.assertEqual(str(tag), tag.name)
 
     def test_create_claim(self):
         """Test creating an claims"""

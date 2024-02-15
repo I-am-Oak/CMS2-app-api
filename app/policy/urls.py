@@ -7,7 +7,7 @@ from policy import views
 
 router = DefaultRouter()
 router.register('policys', views.PolicyViewSet)
-router.register('statuss', views.StatusViewSet)
+router.register('tags', views.TagViewSet)
 router.register('claims', views.ClaimViewSet)
 
 app_name = 'policy'

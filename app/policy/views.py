@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
-from core.models import Policy, Status, Claims
+from core.models import Policy, Tag, Claims
 from policy import serializers
 
 
@@ -22,7 +22,7 @@ from policy import serializers
     list=extend_schema(
         parameters=[
             OpenApiParameter(
-                'statuss',
+                'tags',
                 OpenApiTypes.STR,
                 description='Comma separated list of IDs to filter',
             ),
@@ -47,12 +47,12 @@ class PolicyViewSet(viewsets. ModelViewSet):
 
     def get_queryset(self):
         """Retrieve policys for authenticated user."""
-        statuss = self.request.query_params.get('statuss')
+        tags = self.request.query_params.get('tags')
         claims = self.request.query_params.get('claims')
         queryset = self.queryset.all()
-        if statuss:
-            status_ids = self._params_to_ints(statuss)
-            queryset = queryset.filter(statuss__id__in=status_ids)
+        if tags:
+            status_ids = self._params_to_ints(tags)
+            queryset = queryset.filter(tags__id__in=status_ids)
         if claims:
             claim_ids = self._params_to_ints(claims)
             queryset = queryset.filter(claims__id__in=claim_ids)
@@ -119,10 +119,10 @@ class BasePolicyAttrViewSet(mixins.DestroyModelMixin,
         ).order_by('-name').distinct()
 
 
-class StatusViewSet(BasePolicyAttrViewSet):
-    """Manage statuss in the database."""
-    serializer_class = serializers. StatusSerializer
-    queryset = Status.objects.all()
+class TagViewSet(BasePolicyAttrViewSet):
+    """Manage tags in the database."""
+    serializer_class = serializers. TagSerializer
+    queryset = Tag.objects.all()
 
 
 class ClaimViewSet(BasePolicyAttrViewSet):

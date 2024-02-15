@@ -15,7 +15,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from core.models import Policy, Status, Claims
+from core.models import Policy, Tag, Claims
 
 from policy.serializers import (
     PolicySerializer,
@@ -206,13 +206,13 @@ class PrivatePolicyAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(Policy.objects.filter(id=policy.id).exists())
 
-    def test_create_policy_with_new_statuss(self):
-        """Test creating a policy with new statuss."""
+    def test_create_policy_with_new_tags(self):
+        """Test creating a policy with new tags."""
         payload = {
             'title': 'Thai Prawn Curry',
             'time_minutes': 30,
             'price': Decimal('2.50'),
-            'statuss': [{'name': 'Thai'}, {'name': 'Dinner'}]
+            'tags': [{'name': 'Thai'}, {'name': 'Dinner'}]
         }
         res = self.client.post(RECIPES_URL, payload, format="json")
 
@@ -220,33 +220,33 @@ class PrivatePolicyAPITests(TestCase):
         policys = Policy.objects.filter(user=self.user)
         self.assertEqual(policys.count(), 1)
         policy = policys[0]
-        self.assertEqual(policy.statuss.count(), 2)
-        for status in payload['statuss']:
-            exists = policy.statuss.filter(
-                name=status['name'],
+        self.assertEqual(policy.tags.count(), 2)
+        for tag in payload['tags']:
+            exists = policy.tags.filter(
+                name=tag['name'],
                 user=self.user,
             ).exists()
             self.assertTrue(exists)
 
-    def test_create_policy_with_existing_statuss(self):
+    def test_create_policy_with_existing_tags(self):
         """Test creating a policy with existing status."""
-        status_indian = Status.objects.create(user=self.user, name='Indian')
+        tag_indian = Tag.objects.create(user=self.user, name='Indian')
         payload = {
             'title': 'Pongal',
             'time_minutes': 60,
             'price': Decimal('4.50'),
-            'statuss': [{'name': 'Indian'}, {'name': 'Breakfast'}],
+            'tags': [{'name': 'Indian'}, {'name': 'Breakfast'}],
         }
         res = self.client.post(RECIPES_URL, payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         policys = Policy.objects.filter(user=self.user)
         self.assertEqual(policys.count(), 1)
         policy = policys[0]
-        self.assertEqual(policy.statuss.count(), 2)
-        self.assertIn(status_indian, policy.statuss.all())
-        for status in payload['statuss']:
-            exists = policy.statuss.filter(
-                name=status['name'],
+        self.assertEqual(policy.tags.count(), 2)
+        self.assertIn(tag_indian, policy.tags.all())
+        for tag in payload['tags']:
+            exists = policy.tags.filter(
+                name=tag['name'],
                 user=self.user,
             ).exists()
             self.assertTrue(exists)
@@ -254,40 +254,40 @@ class PrivatePolicyAPITests(TestCase):
     def test_create_status_on_update(self):
         """Test creating status when updating a policy."""
         policy = create_policy(user=self.user)
-        payload = {'statuss': [{'name': 'Lunch'}]}
+        payload = {'tags': [{'name': 'Lunch'}]}
         url = detail_url(policy.id)
         res = self.client.patch(url, payload, format='json')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        new_status = Status.objects.get(user=self.user, name='Lunch')
-        self.assertIn(new_status, policy.statuss.all())
+        new_status = Tag.objects.get(user=self.user, name='Lunch')
+        self.assertIn(new_status, policy.tags.all())
 
-    def test_update_policy_assign_status(self):
+    def test_update_policy_assign_tags(self):
         """Test assigning an existing status when updating a policy."""
-        status_breakfast = Status.objects.create(user=self.user, name='Breakfast')
+        status_breakfast = Tag.objects.create(user=self.user, name='Breakfast')
         policy = create_policy(user=self.user)
-        policy.statuss.add(status_breakfast)
+        policy.tags.add(status_breakfast)
 
-        status_lunch = Status.objects.create(user=self.user, name='Lunch')
-        payload = {'statuss': [{'name': 'Lunch'}]}
+        status_lunch = Tag.objects.create(user=self.user, name='Lunch')
+        payload = {'tags': [{'name': 'Lunch'}]}
         url = detail_url(policy.id)
         res = self.client.patch(url, payload, format='json')
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIn(status_lunch, policy.statuss.all())
-        self.assertNotIn(status_breakfast, policy.statuss.all())
+        self.assertIn(status_lunch, policy.tags.all())
+        self.assertNotIn(status_breakfast, policy.tags.all())
 
-    def test_clear_policy_statuss(self):
-        """Test clearing a policys statuss."""
-        status = Status.objects.create(user=self.user, name='Dessert')
+    def test_clear_policy_tags(self):
+        """Test clearing a policys tags."""
+        tag = Tag.objects.create(user=self.user, name='Dessert')
         policy = create_policy(user=self.user)
-        policy.statuss.add(status)
+        policy.tags.add(tag)
 
-        payload = {'statuss': []}
+        payload = {'tags': []}
         url = detail_url(policy.id)
         res = self.client.patch(url, payload, format='json')
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(policy.statuss.count(), 0)
+        self.assertEqual(policy.tags.count(), 0)
 
     def test_create_policy_with_new_claims(self):
         """Test creating a policy with new claims."""
@@ -380,17 +380,17 @@ class PrivatePolicyAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(policy.claims.count(), 0)
 
-    def test_filter_by_statuss(self):
-        """Test filtering policys by statuss."""
+    def test_filter_by_tags(self):
+        """Test filtering policys by tags."""
         r1 = create_policy(user=self.user, title='Thai Vegetable Curry')
         r2 = create_policy(user=self.user, title='Aubergine with Tahini')
-        status1 = Status.objects.create(user=self.user, name='Vegan')
-        status2 = Status.objects.create(user=self.user, name='Vegetarian')
-        r1.statuss.add(status1)
-        r2.statuss.add(status2)
+        tag1 = Tag.objects.create(user=self.user, name='Vegan')
+        tag2 = Tag.objects.create(user=self.user, name='Vegetarian')
+        r1.tags.add(tag1)
+        r2.tags.add(tag2)
         r3 = create_policy(user=self.user, title='Fish and chips')
 
-        params = {'statuss': f'{status1.id},{status2.id}'}
+        params = {'tags': f'{tag1.id},{tag2.id}'}
         res = self.client.get(RECIPES_URL, params)
 
         s1 = PolicySerializer(r1)
