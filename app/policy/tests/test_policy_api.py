@@ -343,19 +343,22 @@ class PrivatePolicyAPITests(TestCase):
         res = self.client.patch(url, payload, format='json')
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        new_claim = Claims.objects.get(user=self.user,
-                                                name='Limes')
+        new_claim = Claims.objects.get(
+            user=self.user,
+            name='Limes')
         self.assertIn(new_claim, policy. claims.all())
 
     def test_update_policy_assign_claim(self):
         """Test assigning an existing claims when updating a policy."""
-        claim1 = Claims.objects.create(user=self.user,
-                                                name='Pepper')
+        claim1 = Claims.objects.create(
+            user=self.user,
+            name='Pepper')
         policy = create_policy(user=self.user)
         policy.claims.add(claim1)
 
-        claim2 = Claims.objects.create(user=self.user,
-                                                name='Chili')
+        claim2 = Claims.objects.create(
+            user=self.user,
+            name='Chili')
         payload = {'claims': [{'name': 'Chili'}]}
         url = detail_url(policy.id)
         res = self.client.patch(url, payload, format='json')

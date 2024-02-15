@@ -62,8 +62,9 @@ class PrivateClaimsApiTests(TestCase):
         """Test list of claims is limited to authenticated user."""
         user2 = create_user(email='user2@example.com')
         Claims.objects.create(user=user2, name='Salt')
-        claims = Claims.objects.create(user=self.user,
-                                               name='Pepper')
+        claims = Claims.objects.create(
+            user=self.user,
+            name='Pepper')
 
         res = self.client.get(INGREDIENTS_URL)
 
@@ -74,8 +75,9 @@ class PrivateClaimsApiTests(TestCase):
 
     def test_update_claim(self):
         """Test updating an claims."""
-        claims = Claims.objects.create(user=self.user,
-                                               name='Cilantro')
+        claims = Claims.objects.create(
+            user=self.user,
+            name='Cilantro')
 
         payload = {'name': 'Coriander'}
         url = detail_url(claims.id)
@@ -87,8 +89,9 @@ class PrivateClaimsApiTests(TestCase):
 
     def test_delete_claim(self):
         """Test deleting an claims."""
-        claims = Claims.objects.create(user=self.user,
-                                               name='Lettuce')
+        claims = Claims.objects.create(
+            user=self.user,
+            name='Lettuce')
 
         url = detail_url(claims.id)
         res = self.client.delete(url)
