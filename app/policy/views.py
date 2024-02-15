@@ -1,5 +1,5 @@
 """
-Views for the recipe APIs
+Views for the policy APIs
 """
 
 from drf_spectacular.utils import (
@@ -14,30 +14,30 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
-from core.models import Recipe, Tag, Ingredient
-from recipe import serializers
+from core.models import Policy, Status, Claims
+from policy import serializers
 
 
 @extend_schema_view(
     list=extend_schema(
         parameters=[
             OpenApiParameter(
-                'tags',
+                'statuss',
                 OpenApiTypes.STR,
                 description='Comma separated list of IDs to filter',
             ),
             OpenApiParameter(
-                'ingredients',
+                'claims',
                 OpenApiTypes.STR,
                 description='Comma separated list of IDs to filter',
             )
         ]
     )
 )
-class RecipeViewSet(viewsets. ModelViewSet):
-    """View for manage recipe APIs."""
-    serializer_class = serializers. RecipeDetailSerializer
-    queryset = Recipe.objects.all()
+class PolicyViewSet(viewsets. ModelViewSet):
+    """View for manage policy APIs."""
+    serializer_class = serializers. PolicyDetailSerializer
+    queryset = Policy.objects.all()
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -46,16 +46,16 @@ class RecipeViewSet(viewsets. ModelViewSet):
         return [int(str_id) for str_id in qs.split(',')]
 
     def get_queryset(self):
-        """Retrieve recipes for authenticated user."""
-        tags = self.request.query_params.get('tags')
-        ingredients = self.request.query_params.get('ingredients')
+        """Retrieve policys for authenticated user."""
+        statuss = self.request.query_params.get('statuss')
+        claims = self.request.query_params.get('claims')
         queryset = self.queryset.all()
-        if tags:
-            tag_ids = self._params_to_ints(tags)
-            queryset = queryset.filter(tags__id__in=tag_ids)
-        if ingredients:
-            ingredient_ids = self._params_to_ints(ingredients)
-            queryset = queryset.filter(ingredients__id__in=ingredient_ids)
+        if statuss:
+            status_ids = self._params_to_ints(statuss)
+            queryset = queryset.filter(statuss__id__in=status_ids)
+        if claims:
+            claim_ids = self._params_to_ints(claims)
+            queryset = queryset.filter(claims__id__in=claim_ids)
 
         return queryset.filter(
             user=self.request.user
@@ -64,21 +64,21 @@ class RecipeViewSet(viewsets. ModelViewSet):
     def get_serializer_class(self):
         """Return the serializer class for request."""
         if self.action == 'list':
-            return serializers.RecipeSerializer
+            return serializers.PolicySerializer
         elif self.action == 'upload_image':
-            return serializers.RecipeImageSerializer
+            return serializers.PolicyImageSerializer
 
         return self.serializer_class
 
     def perform_create(self, serializer):
-        """Create a new recipe."""
+        """Create a new policy."""
         serializer.save(user=self.request.user)
 
     @action(methods=['POST'], detail=True, url_path='upload-image')
     def upload_image(self, request, pk=None):
-        """Upload an image to recipe."""
-        recipe = self.get_object()
-        serializer = self.get_serializer(recipe, data=request.data)
+        """Upload an image to policy."""
+        policy = self.get_object()
+        serializer = self.get_serializer(policy, data=request.data)
 
         if serializer.is_valid():
             serializer.save()
@@ -98,7 +98,7 @@ class RecipeViewSet(viewsets. ModelViewSet):
         ]
     )
 )
-class BaseRecipeAttrViewSet(mixins.DestroyModelMixin,
+class BasePolicyAttrViewSet(mixins.DestroyModelMixin,
                             mixins.UpdateModelMixin,
                             mixins.ListModelMixin,
                             viewsets.GenericViewSet):
@@ -112,20 +112,20 @@ class BaseRecipeAttrViewSet(mixins.DestroyModelMixin,
         )
         queryset = self.queryset.all()
         if assigned_only:
-            queryset = queryset.filter(recipe__isnull=False)
+            queryset = queryset.filter(policy__isnull=False)
 
         return queryset.filter(
             user=self.request.user
         ).order_by('-name').distinct()
 
 
-class TagViewSet(BaseRecipeAttrViewSet):
-    """Manage tags in the database."""
-    serializer_class = serializers. TagSerializer
-    queryset = Tag.objects.all()
+class StatusViewSet(BasePolicyAttrViewSet):
+    """Manage statuss in the database."""
+    serializer_class = serializers. StatusSerializer
+    queryset = Status.objects.all()
 
 
-class IngredientViewSet(BaseRecipeAttrViewSet):
-    """Manage ingredients in the database."""
-    serializer_class = serializers. IngredientSerializer
-    queryset = Ingredient.objects.all()
+class ClaimViewSet(BasePolicyAttrViewSet):
+    """Manage claims in the database."""
+    serializer_class = serializers. ClaimSerializer
+    queryset = Claims.objects.all()

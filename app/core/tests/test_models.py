@@ -58,44 +58,44 @@ class ModelTests(TestCase):
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
 
-    def test_create_recipe(self):
-        """Test creating a recipe is successful."""
+    def test_create_policy(self):
+        """Test creating a policy is successful."""
         user = get_user_model().objects.create_user(
             'test@example.com',
             'testpass123',
         )
-        recipe = models.Recipe.objects.create(
+        policy = models.Policy.objects.create(
             user=user,
-            title='Sample recipe name',
+            title='Sample policy name',
             time_minutes=5,
             price=Decimal('5.50'),
-            description='Sample recipe description',
+            description='Sample policy description',
         )
 
-        self.assertEqual(str(recipe), recipe.title)
+        self.assertEqual(str(policy), policy.title)
 
-    def test_create_tag(self):
-        """test creating a tag is successful."""
+    def test_create_status(self):
+        """test creating a status is successful."""
         user = create_user()
-        tag = models.Tag.objects.create(user=user, name='tag1')
+        status = models.Status.objects.create(user=user, name='status1')
 
-        self.assertEqual(str(tag), tag.name)
+        self.assertEqual(str(status), status.name)
 
-    def test_create_ingredient(self):
-        """Test creating an ingredient"""
+    def test_create_claim(self):
+        """Test creating an claims"""
         user = create_user()
-        ingredient = models.Ingredient.objects.create(
+        claims = models.Claims.objects.create(
             user=user,
-            name='Ingredient1'
+            name='Claim1'
         )
 
-        self.assertEqual(str(ingredient), ingredient.name)
+        self.assertEqual(str(claims), claims.name)
 
     @patch('core.models.uuid.uuid4')
-    def test_recipe_file_name_uuid(self, mock_uuid):
+    def test_policy_file_name_uuid(self, mock_uuid):
         """"Test genetaring image path."""
         uuid = 'test-uuid'
         mock_uuid.return_value = uuid
-        file_path = models.recipe_image_file_path(None, 'example.jpg')
+        file_path = models.policy_image_file_path(None, 'example.jpg')
 
-        self.assertEqual(file_path, f'uploads/recipe/{uuid}.jpg')
+        self.assertEqual(file_path, f'uploads/policy/{uuid}.jpg')

@@ -13,12 +13,12 @@ from django.contrib.auth.models import (
 )
 
 
-def recipe_image_file_path(instance, filename):
-    """Genatrate file path for new recipe image."""
+def policy_image_file_path(instance, filename):
+    """Genatrate file path for new policy image."""
     ext = os.path.splitext(filename)[1]
     filename = f'{uuid.uuid4()}{ext}'
 
-    return os.path.join('uploads', 'recipe', filename)
+    return os.path.join('uploads', 'policy', filename)
 
 
 class UserManager(BaseUserManager):
@@ -59,8 +59,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
 
 
-class Recipe(models.Model):
-    """Recipe object."""
+class Policy(models.Model):
+    """Policy object."""
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -70,16 +70,16 @@ class Recipe(models.Model):
     time_minutes = models.IntegerField()
     price = models.DecimalField(max_digits=5, decimal_places=2)
     link = models.CharField(max_length=255, blank=True)
-    tags = models.ManyToManyField('Tag')
-    ingredients = models.ManyToManyField('Ingredient')
-    image = models.ImageField(null=True, upload_to=recipe_image_file_path)
+    statuss = models.ManyToManyField('Status')
+    claims = models.ManyToManyField('Claims')
+    image = models.ImageField(null=True, upload_to=policy_image_file_path)
 
     def __str__(self):
         return self.title
 
 
-class Tag(models.Model):
-    """Tag for filtering recipes."""
+class Status(models.Model):
+    """Status for filtering policys."""
     name = models.CharField(max_length=255)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -90,8 +90,8 @@ class Tag(models.Model):
         return self.name
 
 
-class Ingredient(models.Model):
-    """Ingredients for recipes."""
+class Claims(models.Model):
+    """Claims for policys."""
     name = models.CharField(max_length=255)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
