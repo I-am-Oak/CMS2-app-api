@@ -436,7 +436,6 @@ class ImageUploadTests (TestCase):
     def tearDown(self):
         self.recipe.image.delete()
 
-
     def test_upload_image(self):
         """Test uploading an image to a recipe."""
         url = image_upload_url(self.recipe.id)
