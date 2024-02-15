@@ -14,7 +14,7 @@ from django.contrib.auth.models import (
 
 
 def recipe_image_file_path(instance, filename):
-    """genatrate file path for new recipe image."""
+    """Genatrate file path for new recipe image."""
     ext = os.path.splitext(filename)[1]
     filename = f'{uuid.uuid4()}{ext}'
 
