@@ -11,6 +11,7 @@ services:
       context: .
       args:
         - DEV=true
+        - USER=root
     ports:
       - "8000:8000"
     volumes:

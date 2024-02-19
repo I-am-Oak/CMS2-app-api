@@ -60,6 +60,6 @@ RUN python -m venv /py && \
 ENV PATH="/scripts:/py/bin:$PATH"
 
 #switch user from root to django-user everytime you use this image
-#USER django-user
+USER django-user
 
 CMD ["run.sh"]

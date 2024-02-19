@@ -49,4 +49,5 @@ class UserAdmin(BaseUserAdmin):
 admin.site.register(models.User, UserAdmin)
 admin.site.register(models.Policy)
 admin.site.register(models.Tag)
-admin.site.register(models.Claims)
+admin.site.register(models.Claim)
+admin.site.register(models.Company)

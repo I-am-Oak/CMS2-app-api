@@ -3,16 +3,17 @@ Serializers for policy APIs
 """
 from rest_framework import serializers
 
-from core.models import Policy, Tag, Claims
+from core.models import Policy, Tag, Claim, Company
 
 
-class ClaimSerializer(serializers.ModelSerializer):
-    """Serializer for Claims."""
+class CompanySerializer(serializers.ModelSerializer):
+    """Serializer for Company."""
 
     class Meta:
-        model = Claims
-        fields = ['id', 'name']
+        model = Company
+        fields = ['id', 'email', 'name']
         read_only_fields = ['id']
+
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -20,22 +21,19 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ['id', 'name']
+        fields = '__all__'
         read_only_fields = ['id']
 
 
-class PolicySerializer(serializers.ModelSerializer):
-    """Serializer for policys."""
+class ClaimSerializer(serializers.ModelSerializer):
+    """Serializer for Claims."""
     tags = TagSerializer(many=True, required=False)
-    claims = ClaimSerializer(many=True, required=False)
 
     class Meta:
-        model = Policy
-        fields = [
-            'id', 'title', 'time_minutes', 'price', 'link',
-            'tags', 'claims',
-            ]
-        read_only_fields = ['id']
+        model = Claim
+        fields = '__all__'
+        read_only_fields = ['id', 'user', 'title',
+                  'startDate', 'endDate', 'premiumAmt', 'sumAssured',]
 
     def _get_or_create_tags(self, tags, policy):
         """Handle getting or creating tags as needed."""
@@ -47,21 +45,23 @@ class PolicySerializer(serializers.ModelSerializer):
             )
             policy.tags.add(status_obj)
 
-    def _get_or_create_claims(self, claims, policy):
-        """Handle getting or creating claims as needed."""
-        auth_user = self.context['request'].user
-        for claims in claims:
-            claim_obj, created = Claims.objects.get_or_create(
-                user=auth_user,
-                **claims,
-            )
-            policy.claims.add(claim_obj)
 
-    def create(self, validate_data):
+class PolicySerializer(serializers.ModelSerializer):
+    """Serializer for policies."""
+
+    class Meta:
+        model = Policy
+        fields = ['id', 'user', 'title', 'policy_id',
+                  'startDate', 'endDate', 'premiumAmt', 'sumAssured',
+                  'claimedAmt']
+        read_only_fields = ['id']
+
+
+    def create(self, validated_data):
         """Create a policy."""
-        tags = validate_data.pop('tags', [])
-        claims = validate_data.pop('claims', [])
-        policy = Policy.objects.create(**validate_data)
+        tags = validated_data.pop('tags', [])
+        claims = validated_data.pop('claims', [])
+        policy = Policy.objects.create(**validated_data)
         self._get_or_create_tags(tags, policy)
         self._get_or_create_claims(claims, policy)
 
@@ -69,16 +69,19 @@ class PolicySerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Update policy."""
-        tags = validated_data.pop('tags', None)
-        claims = validated_data.pop('claims', None)
+        tags_data = validated_data.pop('tags', [])
+        claims_data = validated_data.pop('claims', [])
 
-        if tags is not None:
-            instance.tags.clear()
-            self._get_or_create_tags(tags, instance)
+        instance.tags.clear()
+        instance.claims.clear()  # Clear all existing claims
 
-        if claims is not None:
-            instance.claims.clear()  # Corrected line
-            self._get_or_create_claims(claims, instance)
+        for tag_data in tags_data:
+            tag, _ = Tag.objects.get_or_create(**tag_data)
+            instance.tags.add(tag)
+
+        for claim_data in claims_data:
+            claim, _ = Claim.objects.get_or_create(**claim_data)
+            instance.claims.add(claim)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -88,17 +91,16 @@ class PolicySerializer(serializers.ModelSerializer):
 
 
 class PolicyDetailSerializer(PolicySerializer):
-    """Serializer for policy detail view. """
+    """Serializer for policy detail view."""
 
     class Meta(PolicySerializer.Meta):
-        fields = PolicySerializer.Meta.fields + ['description', 'image']
+        fields = PolicySerializer.Meta.fields + ['description']
 
 
-class PolicyImageSerializer(serializers.ModelSerializer):
-    """Serializer for uploading images to policys."""
+class ClaimImageSerializer(serializers.ModelSerializer):
+    """Serializer for uploading images to policies."""
 
     class Meta:
         model = Policy
         fields = ['id', 'image']
         read_only_fields = ['id']
-        extra_kwargs = {'image': {'required': 'True'}}
