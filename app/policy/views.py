@@ -13,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from core.models import Policy, Tag, Claim
 from policy import serializers
 
+
 # Define a decorator to extend schema view for API documentation
 @extend_schema_view(
     list=extend_schema(
@@ -66,7 +67,6 @@ class PolicyViewSet(viewsets.ModelViewSet):
 
         return queryset.order_by('-id').distinct()
 
-
     # Override perform_create to associate policy with authenticated user
     def perform_create(self, serializer):
         """Create a new policy."""
@@ -109,12 +109,14 @@ class BasePolicyAttrViewSet(mixins.DestroyModelMixin,
     # Override get_queryset to filter by authenticated user and assigned status
     def get_queryset(self):
         """Filter queryset to authenticated user."""
-        assigned_only = bool(int(self.request.query_params.get('assigned_only', 0)))
+        assigned_only = bool(int(
+            self.request.query_params.get('assigned_only', 0)))
         queryset = self.queryset.all()
         if assigned_only:
             queryset = queryset.filter(policy__isnull=False)
 
-        return queryset.filter(user=self.request.user).order_by('-id').distinct()
+        return queryset.filter(
+            user=self.request.user).order_by('-id').distinct()
 
 
 # Define viewset classes for managing tags and claims
@@ -136,6 +138,7 @@ class ClaimViewSet(BasePolicyAttrViewSet):
             return serializers.ClaimImageSerializer
 
         return self.serializer_class
+
 
 class TagViewSet(ClaimViewSet):
     """Manage tags in the database."""

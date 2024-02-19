@@ -13,7 +13,6 @@ from django.contrib.auth.models import (
     BaseUserManager,
     PermissionsMixin,
 )
-from django.contrib.auth import get_user_model
 
 
 def policy_image_file_path(instance, filename):
@@ -105,7 +104,9 @@ class Policy(models.Model):
         max_length=15,
         choices=POLICY_CHOICES,
         default='None',)
-    policy_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    policy_id = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False, unique=True)
     description = models.TextField(blank=True)
     startDate = models.DateField()
     endDate = models.DateField()
@@ -114,7 +115,7 @@ class Policy(models.Model):
     claimedAmt = models.DecimalField(max_digits=10, decimal_places=2)
 
     def save(self, *args, **kwargs):
-        """Override save method to generate a new UUID for policy_id if not set."""
+        """Ovride save method to generate a new UUID for policy_id"""
         if not self.policy_id:
             self.policy_id = uuid.uuid4()
         super().save(*args, **kwargs)
@@ -146,7 +147,10 @@ class Claim(models.Model):
     )
 
     claim_id = models.CharField(max_length=50, unique=True, editable=False)
-    claimedAmt = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    claimedAmt = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)])
     description = models.TextField(blank=True)
 
     image = models.ImageField(
@@ -162,7 +166,5 @@ class Claim(models.Model):
             self.claim_id = f"{self.id}-{self.policy.policy_id}"
         super().save(*args, **kwargs)
 
-
     def __str__(self):
         return f"Claim for Policy {self.id} by User {self.claimer.email}"
-

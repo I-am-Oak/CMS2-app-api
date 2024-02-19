@@ -15,7 +15,6 @@ class CompanySerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
-
 class TagSerializer(serializers.ModelSerializer):
     """Serializer for tags."""
 
@@ -32,8 +31,9 @@ class ClaimSerializer(serializers.ModelSerializer):
     class Meta:
         model = Claim
         fields = '__all__'
-        read_only_fields = ['id', 'user', 'title',
-                  'startDate', 'endDate', 'premiumAmt', 'sumAssured',]
+        read_only_fields = [
+            'id', 'user', 'title',
+            'startDate', 'endDate', 'premiumAmt', 'sumAssured']
 
     def _get_or_create_tags(self, tags, policy):
         """Handle getting or creating tags as needed."""
@@ -55,7 +55,6 @@ class PolicySerializer(serializers.ModelSerializer):
                   'startDate', 'endDate', 'premiumAmt', 'sumAssured',
                   'claimedAmt']
         read_only_fields = ['id']
-
 
     def create(self, validated_data):
         """Create a policy."""
