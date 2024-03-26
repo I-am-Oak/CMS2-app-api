@@ -32,3 +32,26 @@ class ManageUserView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         """retreve and return the authenticated user"""
         return self.request.user
+
+from django.shortcuts import render, redirect
+
+from django.http import JsonResponse
+
+def create_user(request):
+    if request.method == 'POST':
+        # Extract form data
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        name = request.POST.get('name')
+
+        # Validate form data (add your validation logic here)
+
+        # Create user or perform other actions
+        # Example: Creating a new user
+        # user = User.objects.create(email=email, password=password, name=name)
+
+        # Return success response
+        return JsonResponse({'message': 'User created successfully'}, status=201)
+    else:
+        # Handle non-POST requests
+        return JsonResponse({'error': 'Only POST method is allowed'}, status=405)

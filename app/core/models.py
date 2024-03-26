@@ -136,7 +136,7 @@ class Policy(models.Model):
 
 class Claim(models.Model):
     """Claim for policies."""
-    claimer = models.ForeignKey(
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         default=1
@@ -162,9 +162,8 @@ class Claim(models.Model):
     def save(self, *args, **kwargs):
 
         if not self.claim_id:
-            # Generating claim_id by concatenating id and policy_id
-            self.claim_id = f"{self.id}-{self.policy.policy_id}"
+            self.claim_id = f"{self.policy.policy_id}"
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Claim for Policy {self.id} by User {self.claimer.email}"
+        return f"Claim for Policy {self.id} by User {self.user.email}"

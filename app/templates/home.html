@@ -1,0 +1,375 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<link rel="stylesheet" type="text/css" href="{% static 'dash.css' %}">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>User Dashboard</title>
+</head>
+
+<body>
+	<header>User Dashboard </header>
+	<nav>
+		<div class="option">My Account
+			<div class="options">
+				<a href="#" onclick="loadContent('account', 'view')">View</a>
+				<a href="#" onclick="loadContent('account', 'edit')">Edit</a>
+				<!-- <a href="#" onclick="loadContent('account', 'option x')">Option X</a>
+				<a href="#" onclick="loadContent('account', 'option y')">Option Y</a> -->
+			</div>
+		</div>
+		<div class="option">My Policies
+			<div class="options">
+				<a href="#" onclick="loadContent('policy', 'view')">View</a>
+				<a href="#" onclick="loadContent('policy', 'add')">Add</a>
+				<a href="#" onclick="loadContent('policy', 'edit')">Edit</a>
+			</div>
+		</div>
+		<div class="option">My Claims
+			<div class="options">
+				<a href="#" onclick="loadContent('claims', 'view')">View</a>
+				<a href="#" onclick="loadContent('claims', 'add')">Add</a>
+				<!-- <a href="#" onclick="loadContent('claims', 'option x')">Option X</a>
+				<a href="#" onclick="loadContent('claims', 'option y')">Option Y</a> -->
+			</div>
+		</div>
+		<!-- <div class="option">XYZ
+			<div class="options">
+				<a href="#" onclick="loadContent('XYZ', 'view')">View</a>
+				<a href="#" onclick="loadContent('XYZ', 'edit')">Edit</a>
+				<a href="#" onclick="loadContent('XYZ', 'option x')">Option X</a>
+				<a href="#" onclick="loadContent('XYZ', 'option y')">Option Y</a>
+			</div> -->
+		</div>
+		<button class="logout" onclick="logout()">Logout</button>
+	</nav>
+	<main id="content">
+		<!-- Contents will be loaded here -->
+	</main>
+	<script>
+		function logout() {
+			// Empty the auth_token
+			localStorage.removeItem('auth_token');
+
+			// Redirect to the login page
+			window.location.href = '/login';
+		}
+
+		function loadContent(category, action) {
+			const content = document.getElementById('content');
+			if (category === 'claims' && action === 'view') {
+				// Make AJAX request to API endpoint for viewing claims
+				fetch('/api/policy/claims', {
+					method: 'GET',
+					headers: {
+						'Authorization': 'Token ' + localStorage.getItem('auth_token'),
+						'Content-Type': 'application/json'
+					}
+				})
+					.then(response => response.json())
+					.then(data => {
+						// Display data in the content area
+						let tableHTML = '<table>';
+						tableHTML += '<thead><tr><th>ID</th><th>Claim ID</th><th>Claimed Amount</th><th>Description</th><th>Image</th><th>User</th><th>Policy</th><th>Tags</th></tr></thead>';
+						tableHTML += '<tbody>';
+						data.forEach(claim => {
+							tableHTML += '<tr>';
+							tableHTML += `<td>${claim.id}</td>`;
+							tableHTML += `<td>${claim.claim_id}</td>`;
+							tableHTML += `<td>${claim.claimedAmt}</td>`;
+							tableHTML += `<td>${claim.description}</td>`;
+							tableHTML += `<td><img src="${claim.image}" alt="Claim Image"></td>`;
+							tableHTML += `<td>${claim.user}</td>`;
+							tableHTML += `<td>${claim.policy}</td>`;
+							tableHTML += '<td>';
+							claim.tags.forEach(tag => {
+								tableHTML += `ID: ${tag.id}<br>`;
+								tableHTML += `Claim Status: ${tag.claim_status}<br>`;
+								tableHTML += `Description: ${tag.description}<br>`;
+							});
+							tableHTML += '</td>';
+							tableHTML += '</tr>';
+						});
+						tableHTML += '</tbody>';
+						tableHTML += '</table>';
+						content.innerHTML = tableHTML;
+					})
+					.catch(error => {
+						console.error('Error fetching claims data:', error);
+						content.innerHTML = '<p>Error fetching claims data. Please try again later.</p>';
+					});
+			}
+			else if (category === 'claims' && action === 'add') {
+				// Display the claim form for adding
+				content.innerHTML = `
+        <h1>Add new Claim</h1>
+        <form id="claimForm" method="post">
+            {% csrf_token %}
+            <label for="claimedStatus">Claimed Status:</label><br>
+            <select id="claimedStatus" name="claimedStatus">
+                <option value="RAISED">RAISED</option>
+                <option value="IN PROGRESS">IN PROGRESS</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="ACCEPTED">ACCEPTED</option>
+            </select><br>
+            <label for="description">Description:</label><br>
+            <input type="text" id="description" name="description" placeholder="Enter description"><br>
+            <label for="claimedAmt">Claimed Amount:</label><br>
+            <input type="text" id="claimedAmt" name="claimedAmt" placeholder="Enter claimed amount"><br>
+            <label for="policy">Policy ID:</label><br>
+            <input type="text" id="policy" name="policy" placeholder="Enter policy ID"><br>
+            <button type="submit">Submit</button>
+        </form>
+    `;
+				// Add event listener for form submission
+				document.getElementById('claimForm').addEventListener('submit', function (event) {
+					event.preventDefault(); // Prevent default form submission
+
+					// Construct claim data from form fields
+					const formData = new FormData(this);
+					const claimData = {};
+					formData.forEach((value, key) => {
+						claimData[key] = value;
+					});
+					// Construct the tags object
+					const tags = [{ claim_status: claimData.claimedStatus, description: claimData.description }];
+					claimData.tags = tags;
+					delete claimData.claimedStatus;
+					delete claimData.description;
+
+					// Make AJAX request to API endpoint for adding new claim
+					fetch('/api/policy/claims/create_claim/', {
+						method: 'POST',
+						headers: {
+							'Authorization': 'Token ' + localStorage.getItem('auth_token'),
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify(claimData) // Convert claimData to JSON string
+					})
+						.then(response => {
+							console.log(response);
+							if (response.ok) {
+								alert('Claim added successfully!');
+								// Optionally redirect to another page or perform additional actions
+							} else {
+								throw new Error('Failed to add claim.');
+							}
+						})
+						.catch(error => {
+							console.error('Error adding claim:', error);
+							alert('Failed to add claim. Please try again.');
+						});
+				});
+			} else if (category === 'account' && action === 'view') {
+				// Make AJAX request to API endpoint for viewing user account
+				fetch('/api/user/me/', {
+					method: 'GET',
+					headers: {
+						'Authorization': 'Token ' + localStorage.getItem('auth_token'),
+						'Content-Type': 'application/json'
+					}
+				})
+					.then(response => response.json())
+					.then(data => {
+						// Display data in tabular form
+						let tableHTML = '<table border="1"><tr><th>Email</th><th>Name</th>';
+						tableHTML += `<tr><td>${data.email}</td><td>${data.name}</td>`;
+						tableHTML += '</table>';
+						content.innerHTML = tableHTML;
+					})
+					.catch(error => {
+						console.error('Error fetching user account data:', error);
+						content.innerHTML = '<p>Error fetching user account data. Please try again later.</p>';
+					});
+			}
+
+			else if (category === 'policy' && action === 'view') {
+				// Make AJAX request to API endpoint for viewing policies
+				fetch('/api/policy/policys/', {
+					method: 'GET',
+					headers: {
+						'Authorization': 'Token ' + localStorage.getItem('auth_token'),
+						'Content-Type': 'application/json'
+					}
+				})
+					.then(response => response.json())
+					.then(data => {
+						// Display data in the content area
+						if (data.length > 0) {
+							let tableHtml = '<table border="1">';
+							// Create table header
+							tableHtml += '<thead><tr>';
+							Object.keys(data[0]).forEach(key => {
+								tableHtml += '<th>' + key + '</th>';
+							});
+							tableHtml += '</tr></thead>';
+							// Create table body
+							tableHtml += '<tbody>';
+							data.forEach(policy => {
+								tableHtml += '<tr>';
+								Object.values(policy).forEach(value => {
+									tableHtml += '<td>' + value + '</td>';
+								});
+								tableHtml += '</tr>';
+							});
+							tableHtml += '</tbody></table>';
+							content.innerHTML = tableHtml;
+						} else {
+							content.innerHTML = '<p>No policy data available.</p>';
+						}
+					})
+					.catch(error => {
+						console.error('Error fetching policy data:', error);
+						content.innerHTML = '<p>Error fetching policy data. Please try again later.</p>';
+					});
+			}
+			else if (category === 'policy' && action === 'add') {
+				// Display the policy form for editing
+				content.innerHTML = `
+					<h1>Add new Policy</h1>
+					<form id="policyForm" method="post">
+						{% csrf_token %}
+						<input type="hidden" id="user" name="user" value="2"> <!-- Include user ID as a hidden input field -->
+						<label for="title">Title:</label><br>
+						<select id="title" name="title">
+							<option value="">--</option>
+							<option value="VEHICLE">VEHICLE</option>
+							<option value="EMPLOYMENT">EMPLOYMENT</option>
+							<option value="HEALTH">HEALTH</option>
+							<option value="TRAVEL">TRAVEL</option>
+						</select><br>
+						<label for="startDate">Start Date:</label><br>
+						<input type="date" id="startDate" name="startDate"><br>
+						<label for="endDate">End Date:</label><br>
+						<input type="date" id="endDate" name="endDate"><br>
+						<label for="premiumAmt">Premium Amount:</label><br>
+						<input type="text" id="premiumAmt" name="premiumAmt"><br>
+						<label for="sumAssured">Sum Assured:</label><br>
+						<input type="text" id="sumAssured" name="sumAssured"><br>
+						<label for="claimedAmt">Claimed Amount:</label><br>
+						<input type="text" id="claimedAmt" name="claimedAmt"><br>
+						<label for="description">Description:</label><br>
+						<textarea id="description" name="description"></textarea><br>
+						<button type="submit">Submit</button>
+					</form>
+				`;
+				// Add event listener for form submission
+				document.getElementById('policyForm').addEventListener('submit', function (event) {
+					event.preventDefault(); // Prevent default form submission
+
+					// Construct policy data from form fields
+					const formData = new FormData(this);
+					const policyData = {};
+					formData.forEach((value, key) => {
+						policyData[key] = value;
+					});
+
+					// Make AJAX request to API endpoint for adding new policy
+					fetch('/api/policy/policys/', {
+						method: 'POST',
+						headers: {
+							'Authorization': 'Token ' + localStorage.getItem('auth_token'),
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify(policyData) // Convert policyData to JSON string
+					})
+						.then(response => {
+							console.log(response);
+							if (response.ok) {
+								alert('Policy added successfully!');
+								// Optionally redirect to another page or perform additional actions
+							} else {
+								throw new Error('Failed to add policy.');
+							}
+						})
+						.catch(error => {
+							console.error('Error adding policy:', error);
+							alert('Failed to add policy. Please try again.');
+						});
+				});
+			} else if (category === 'policy' && action === 'edit') {
+				// Display the policy form for editing
+				content.innerHTML = `
+					<h1>Edit Policy</h1>
+					<form id="policyForm" method="post">
+						{% csrf_token %}
+						<label for="title">Policy Id:</label><br>
+						<input type="text" id="id" name="id"><br>
+						<label for="title">Title:</label><br>
+						<select id="title" name="title">
+							<option value="">--</option>
+							<option value="VEHICLE">VEHICLE</option>
+							<option value="EMPLOYMENT">EMPLOYMENT</option>
+							<option value="HEALTH">HEALTH</option>
+							<option value="TRAVEL">TRAVEL</option>
+						</select><br>
+						<label for="startDate">Start Date:</label><br>
+						<input type="date" id="startDate" name="startDate"><br>
+						<label for="endDate">End Date:</label><br>
+						<input type="date" id="endDate" name="endDate"><br>
+						<label for="premiumAmt">Premium Amount:</label><br>
+						<input type="text" id="premiumAmt" name="premiumAmt"><br>
+						<label for="sumAssured">Sum Assured:</label><br>
+						<input type="text" id="sumAssured" name="sumAssured"><br>
+						<label for="claimedAmt">Claimed Amount:</label><br>
+						<input type="text" id="claimedAmt" name="claimedAmt"><br>
+						<label for="description">Description:</label><br>
+
+						<button type="submit">Submit</button>
+					</form>
+
+				`;
+				// Add event listener for form submission
+				document.getElementById('policyForm').addEventListener('submit', function (event) {
+					event.preventDefault(); // Prevent default form submission
+
+					// Construct policy data from form fields
+					const formData = new FormData(this);
+					const policyData = {};
+					formData.forEach((value, key) => {
+						policyData[key] = value;
+					});
+
+					// Make AJAX request to API endpoint for editing policy
+					const idInput = document.getElementById('id');
+					const id = idInput.value;
+					delete policyData['id'];
+					console.log("ye user ")
+					console.log({ id })
+					fetch(`/api/policy/policys/${id}/`, {
+						method: 'PUT', // Assuming you use PUT method for editing policy
+						headers: {
+							'Authorization': 'Token ' + localStorage.getItem('auth_token'),
+							'Content-Type': 'application/json'
+						},
+						body: JSON.stringify(policyData) // Convert policyData to JSON string
+					})
+						.then(response => {
+							console.log("hellooo")
+							console.log(response);
+							if (response.ok) {
+								alert('Policy edited successfully!');
+								// Optionally redirect to another page or perform additional actions
+							} else {
+								console.log("ye error 1")
+								throw new Error('Failed to edit policy.');
+							}
+						})
+						.catch(error => {
+							console.error('Error editing policy:', error);
+							console.log("ye error 2")
+							alert('Failed to edit policy. Please try again.');
+						});
+				});
+			} else {
+				// For other actions or categories, display default message
+				content.innerHTML = `<h2>${category} - ${action}</h2><p>This is the content for ${category} - ${action}.</p>`;
+			}
+		}
+	</script>
+
+</body>
+
+</html>

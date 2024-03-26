@@ -33,6 +33,7 @@ ARG DEV=false
 #addser adds new passwordless user inside our image(dont run your application using root user- prevents attacker from total access)
 RUN python -m venv /py && \
     /py/bin/pip install --upgrade pip && \
+    /py/bin/pip install django-cors-headers &&\
     apk add --update --no-cache postgresql-client jpeg-dev && \
     apk add --update --no-cache --virtual .tmp-build-deps \
         build-base postgresql-dev musl-dev zlib zlib-dev linux-headers && \

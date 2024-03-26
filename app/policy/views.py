@@ -74,7 +74,7 @@ class PolicyViewSet(viewsets.ModelViewSet):
 
     # Define custom action for uploading images to policies
     @action(methods=['POST'], detail=True, url_path='upload-image')
-    def upload_image(self, request, pk=None):
+    def upload_image(self, request, pk=1):
         """Upload an image to policy."""
         policy = self.get_object()
         serializer = self.get_serializer(policy, data=request.data)
@@ -138,9 +138,22 @@ class ClaimViewSet(BasePolicyAttrViewSet):
             return serializers.ClaimImageSerializer
 
         return self.serializer_class
+    
+    @extend_schema(
+        request=serializers.ClaimSerializer,
+        responses={status.HTTP_201_CREATED: serializers.ClaimSerializer}
+    )
+    @action(detail=False, methods=['POST'])
+    def create_claim(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TagViewSet(ClaimViewSet):
     """Manage tags in the database."""
     serializer_class = serializers.TagSerializer
     queryset = Tag.objects.all()
+    

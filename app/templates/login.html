@@ -1,0 +1,81 @@
+<!-- login.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Login Page</title>
+	<link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
+</head>
+
+<body>
+	<div class="login">
+		<h1>Login</h1>
+		<form id="login-form">
+			{% csrf_token %}
+			<input type="email" id="email" name="email" placeholder="E-mail" required>
+			<input type="password" id="password" name="password" placeholder="Password" required>
+			<input type="checkbox" id="remember-me" name="remember-me">Remember Me
+			<!-- Add a hidden input field for the CSRF token -->
+			<input type="hidden" name="csrfmiddlewaretoken">
+			<button type="submit" class="btn btn-primary btn-block btn-large">Login</button>
+		</form>
+
+		<div id="error-message" style="display: none; color: red;"></div>
+		<div id="loading" style="display: none;">Logging in...</div>
+	</div>
+
+	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+	<script>
+		document.addEventListener("DOMContentLoaded", function () {
+			const form = document.getElementById("login-form");
+			const emailInput = document.getElementById("email");
+			const passwordInput = document.getElementById("password");
+			const rememberMeCheckbox = document.getElementById("remember-me");
+			const errorMessage = document.getElementById("error-message");
+			const loadingIndicator = document.getElementById("loading");
+
+			form.addEventListener("submit", async (event) => {
+				event.preventDefault();
+				errorMessage.style.display = "none";
+				loadingIndicator.style.display = "block";
+
+				const data = {
+					email: emailInput.value,
+					password: passwordInput.value,
+					remember_me: rememberMeCheckbox.checked
+				};
+
+				try {
+					// Retrieve the CSRF token from the hidden input field
+					const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+					const response = await axios.post('/api/user/token/', data, {
+						// Include the CSRF token in the request headers
+						headers: {
+							'X-CSRFToken': csrfToken
+						}
+					});
+					if (response.status === 200) {
+						// Set the auth token in the browser's local storage
+						console.log(response)
+						localStorage.setItem('auth_token', response.data.token);
+						console.log('Stored auth token:', localStorage.getItem('auth_token')); // Log the stored token
+						// Redirect to the home page
+						window.location.href = "/home/";
+						alert("Login successful");
+					}
+				} catch (error) {
+					console.error(error);
+					errorMessage.textContent = error.response.data.message;
+					errorMessage.style.display = "block";
+					alert("Invalid Combination of email and password. Retry.");
+				} finally {
+					loadingIndicator.style.display = "none";
+				}
+			});
+		});
+	</script>
+</body>
+
+</html>
